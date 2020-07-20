@@ -1,66 +1,76 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 
-namespace Messaging
+namespace BigJacob.Messaging
 {
     /// <summary>
     /// Sends SMTP emails
     /// </summary>
-    public class SMTPEmail : ISendSMTP
+    public class SMTPEmail : ISendSMTP, IDisposable
     {
+        private readonly SmtpClient client;
+        private readonly string fromAddress;
+
+        public SMTPEmail(string fromAddress, string password)
+        {
+            this.fromAddress = fromAddress;
+
+            client = fromAddress.Contains("gmail")
+                ? new SmtpClient(Constants.GoogleHost, Constants.GooglePort)
+                : new SmtpClient(Constants.OutlookHost, Constants.OutlookPort);
+
+            client.UseDefaultCredentials = false;
+            client.Credentials = new NetworkCredential(fromAddress, password);
+            client.EnableSsl = true;
+        }
+
         /// <summary>
         /// Send an email
         /// </summary>
-        /// <param name="sender"> Email address of sender </param>
-        /// <param name="password"> Password for the sender </param>
-        /// <param name="to"> Email addresses of recipients </param>
+        /// <param name="toAddresses"> Email addresses of recipients </param>
         /// <param name="subject"> Email subject </param>
         /// <param name="body"> Email body </param>
-        public void Send(string sender, string password, IEnumerable<string> to, string subject, string body)
+        public void Send(IEnumerable<string> toAddresses, string subject, string body)
         {
-            var message = GetMessage(sender, to, subject, body);
+            var message = GetMessage(toAddresses, subject, body);
 
-            using var client = GetClient(sender, password);
             client.Send(message);
         }
 
         /// <summary>
         /// Asynchronously send an email
         /// </summary>
-        /// <param name="sender"> Email address of sender </param>
-        /// <param name="password"> Password for the sender </param>
-        /// <param name="to"> Email addresses of recipients </param>
+        /// <param name="toAddresses"> Email addresses of recipients </param>
         /// <param name="subject"> Email subject </param>
         /// <param name="body"> Email body </param>
         /// <returns> A task </returns>
-        public async Task SendAsync(string sender, string password, IEnumerable<string> to, string subject, string body)
+        public async Task SendAsync(IEnumerable<string> toAddresses, string subject, string body)
         {
-            var message = GetMessage(sender, to, subject, body);
+            var message = GetMessage(toAddresses, subject, body);
 
-            using var client = GetClient(sender, password);
             await client.SendMailAsync(message);
         }
 
         /// <summary>
         /// Create a MailMessage
         /// </summary>
-        /// <param name="sender"> Email sender's address </param>
-        /// <param name="to"> Email recipients' addresses </param>
+        /// <param name="toAddresses"> Email recipients' addresses </param>
         /// <param name="subject"> Email subject </param>
         /// <param name="body"> Email body </param>
         /// <returns> A MailMessage </returns>
-        private MailMessage GetMessage(string sender, IEnumerable<string> to, string subject, string body)
+        private MailMessage GetMessage(IEnumerable<string> toAddresses, string subject, string body)
         {
             var message = new MailMessage()
             {
-                From = new MailAddress(sender),
+                From = new MailAddress(fromAddress),
                 Subject = subject,
                 Body = body
             };
 
-            foreach (var recipient in to)
+            foreach (var recipient in toAddresses)
             {
                 message.To.Add(new MailAddress(recipient));
             }
@@ -69,23 +79,11 @@ namespace Messaging
         }
 
         /// <summary>
-        /// Create an SMTP client
+        /// Dispose of the SMTP Client
         /// </summary>
-        /// <param name="sender"> Email sender's address </param>
-        /// <param name="password"> Email sender's password </param>
-        /// <returns> An SMTPClient </returns>
-        private SmtpClient GetClient(string sender, string password)
+        public void Dispose()
         {
-            var client = new SmtpClient();
-
-            client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential(sender, password);
-
-            client.Host = "smtp.office365.com";
-            client.Port = 587;
-            client.EnableSsl = true;
-
-            return client;
+            client?.Dispose();
         }
     }
 }

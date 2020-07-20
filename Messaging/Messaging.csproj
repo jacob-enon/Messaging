@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>BigJacob.Messaging</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>BigJacob.Messaging</PackageId>
+    <Authors>big Jacob</Authors>
+    <Description>Services for sending messages</Description>
+    <Copyright>2020</Copyright>
   </PropertyGroup>
 
 </Project>
