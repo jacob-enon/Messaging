@@ -1,7 +1,8 @@
 ﻿using BigJacob.MVVM;
-using Messaging;
+using BigJacob.Messaging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace DemoUI.ViewModel
@@ -11,6 +12,9 @@ namespace DemoUI.ViewModel
         #region Properties
 
         private string _recipient;
+        /// <summary>
+        /// Address of the email recipient
+        /// </summary>
         public string Recipient
         {
             get => _recipient;
@@ -25,6 +29,9 @@ namespace DemoUI.ViewModel
         }
 
         private string _sender;
+        /// <summary>
+        /// Address of the email sender
+        /// </summary>
         public string Sender
         {
             get => _sender;
@@ -39,6 +46,9 @@ namespace DemoUI.ViewModel
         }
 
         private string _password;
+        /// <summary>
+        /// Password of the email sender
+        /// </summary>
         public string Password
         {
             get => _password;
@@ -53,6 +63,9 @@ namespace DemoUI.ViewModel
         }
 
         private string _subject;
+        /// <summary>
+        /// Email subject
+        /// </summary>
         public string Subject
         {
             get => _subject;
@@ -67,6 +80,9 @@ namespace DemoUI.ViewModel
         }
 
         private string _body;
+        /// <summary>
+        /// Email body
+        /// </summary>
         public string Body
         {
             get => _body;
@@ -84,16 +100,25 @@ namespace DemoUI.ViewModel
 
         #region Commands
 
+        /// <summary>
+        /// Send the email
+        /// </summary>
         public ICommand Send => new RelayCommand<object>(async x => await SendMessage());
 
         #endregion
 
         #region Methods
 
+        /// <summary>
+        /// Send a message via SMTP
+        /// </summary>
+        /// <returns> A task </returns>
         private async Task SendMessage()
         {
-            var email = new SMTPEmail();
-            await email.SendAsync(Sender, Password, new List<string>() { Recipient }, Subject, Body);
+            using var email = new SMTPEmail(Sender, Password);
+            await email.SendAsync(new List<string>() { Recipient }, Subject, Body);
+
+            MessageBox.Show($"An email has been sent to {Recipient}", "Email sent!");
         }
 
         #endregion
